@@ -2,10 +2,11 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { LayoutDashboard, Newspaper, TrendingUp, Menu, Bell } from "lucide-react"
+import { LayoutDashboard, Newspaper, TrendingUp, Menu, Bell, LogOut } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { useState } from "react"
+import { useAuth } from "@/hooks/useAuth"
 
 const navigation = [
   {
@@ -33,6 +34,20 @@ const navigation = [
 export function Sidebar() {
   const pathname = usePathname()
   const [isCollapsed, setIsCollapsed] = useState(false)
+  const { user, logout } = useAuth()
+
+  // Hide sidebar on auth pages
+  if (pathname === '/signin' || pathname === '/signup') {
+    return null
+  }
+
+  // Get user initials
+  const getInitials = () => {
+    if (user) {
+      return `${user.firstName.charAt(0)}${user.lastName.charAt(0)}`.toUpperCase()
+    }
+    return 'U'
+  }
 
   return (
     <div
@@ -75,15 +90,30 @@ export function Sidebar() {
       </nav>
 
       <div className="border-t border-sidebar-border p-4">
-        <div className={cn("flex items-center gap-3", isCollapsed && "justify-center")}>
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground font-mono font-bold">
-            U
+        <div className={cn("flex items-center gap-3", isCollapsed ? "justify-center" : "justify-between")}>
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground font-mono font-bold text-sm">
+              {getInitials()}
+            </div>
+            {!isCollapsed && user && (
+              <div className="flex flex-col min-w-0 flex-1">
+                <span className="text-sm font-medium text-sidebar-foreground truncate">
+                  {user.firstName} {user.lastName}
+                </span>
+                <span className="text-xs text-muted-foreground truncate">{user.email}</span>
+              </div>
+            )}
           </div>
           {!isCollapsed && (
-            <div className="flex flex-col">
-              <span className="text-sm font-medium text-sidebar-foreground">User</span>
-              <span className="text-xs text-muted-foreground">trader@hub.com</span>
-            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={logout}
+              className="text-sidebar-foreground hover:bg-sidebar-accent shrink-0"
+              title="Logout"
+            >
+              <LogOut className="h-4 w-4" />
+            </Button>
           )}
         </div>
       </div>

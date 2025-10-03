@@ -4,6 +4,7 @@ import { GeistSans } from "geist/font/sans"
 import { GeistMono } from "geist/font/mono"
 import { Analytics } from "@vercel/analytics/next"
 import { Sidebar } from "@/components/sidebar"
+import { ProtectedRoute } from "@/components/protected-route"
 import { Suspense } from "react"
 import "./globals.css"
 
@@ -21,12 +22,14 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`font-sans ${GeistSans.variable} ${GeistMono.variable}`}>
-        <div className="flex h-screen overflow-hidden">
-          <Suspense fallback={<div>Loading...</div>}>
-            <Sidebar />
-          </Suspense>
-          <main className="flex-1 overflow-y-auto">{children}</main>
-        </div>
+        <ProtectedRoute>
+          <div className="flex h-screen overflow-hidden">
+            <Suspense fallback={<div>Loading...</div>}>
+              <Sidebar />
+            </Suspense>
+            <main className="flex-1 overflow-y-auto">{children}</main>
+          </div>
+        </ProtectedRoute>
         <Analytics />
       </body>
     </html>
