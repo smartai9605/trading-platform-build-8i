@@ -1,6 +1,13 @@
+"use client"
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import { ArrowUpRight, ArrowDownRight, X } from "lucide-react"
+import { useEffect, useState } from "react"
+
+const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
 
 const openPositions = [
   {
@@ -36,6 +43,55 @@ const openPositions = [
 ]
 
 export default function PortfolioPage() {
+
+  const [accounts, setAccounts] = useState<any[]>([])
+  const [openPositions, setOpenPositions] = useState<any[]>([])
+  const [combinedPositions, setCombinedPositions] = useState<any[]>([])
+
+  const getAccounts = async () => {
+    const accounts = await fetch(`${BACKEND_URL}/portfolio`, {
+    })
+    console.log(accounts)
+    if (accounts.ok) {
+      const data = await accounts.json()
+      console.log(data)
+      
+      // Group positions by account
+      const positionsByAccount: Record<string, any[]> = {}
+      
+      if (data.positions && Array.isArray(data.positions)) {
+        data.positions.forEach((position: any) => {
+          const accountId = position.account
+          if (!positionsByAccount[accountId]) {
+            positionsByAccount[accountId] = []
+          }
+          positionsByAccount[accountId].push(position)
+        })
+      }
+      
+      console.log('Positions grouped by account:', positionsByAccount)
+      
+      // Convert to array format if needed
+      const combinedPositions = Object.entries(positionsByAccount).map(([account, positions]) => ({
+        account,
+        positions,
+        totalMarketValue: positions.reduce((sum, pos) => sum + (pos.marketValue || 0), 0),
+        positionCount: positions.length
+      }))
+
+      setCombinedPositions(combinedPositions)
+      
+      console.log('Combined positions:', combinedPositions)
+      
+      setAccounts(combinedPositions)
+      setOpenPositions(data.positions || [])
+    }
+  }
+
+  useEffect(() => {
+    getAccounts()
+  }, [])
+
   const totalValue = openPositions.reduce((sum, pos) => sum + pos.value, 0)
   const totalProfitLoss = openPositions.reduce((sum, pos) => sum + pos.profitLoss, 0)
   const cashBalance = 25430.75
@@ -48,6 +104,10 @@ export default function PortfolioPage() {
           <p className="text-muted-foreground">Manage your positions and execute trades</p>
         </div>
         <div className="flex gap-3">
+          <Button className="bg-sky-500 text-primary-foreground hover:bg-sky-500/90" onClick={getAccounts}>
+            <ArrowUpRight className="mr-2 h-4 w-4" />
+            Accounts
+          </Button>
           <Button className="bg-success text-success-foreground hover:bg-success/90">
             <ArrowUpRight className="mr-2 h-4 w-4" />
             Buy
@@ -103,49 +163,65 @@ export default function PortfolioPage() {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {openPositions.map((position) => (
+            {combinedPositions.map((position, index) => (
               <div
-                key={position.symbol}
-                className="flex items-center justify-between rounded-lg border border-border bg-secondary/50 p-4"
+                key={index}
+                className="rounded-lg border border-border bg-card p-6 shadow-sm transition-shadow hover:shadow-md"
               >
-                <div className="flex items-center gap-4">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 font-mono font-bold text-primary">
-                    {position.symbol.slice(0, 2)}
+                <div className="space-y-4">
+                  {/* Account Header */}
+                  <div className="flex items-center justify-between pb-3 border-b border-border">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
+                        <span className="text-sm font-bold text-primary">{position.account.slice(0, 2).toUpperCase()}</span>
+                      </div>
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Account ID</Label>
+                        <p className="font-mono text-sm font-semibold text-foreground">{position.account}</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <Label className="text-xs text-muted-foreground">Positions</Label>
+                      <p className="text-sm font-semibold text-foreground">{position.positionCount}</p>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="font-semibold text-foreground">{position.symbol}</h3>
-                    <p className="text-sm text-muted-foreground">{position.name}</p>
-                  </div>
-                </div>
 
-                <div className="grid grid-cols-5 gap-8 text-right">
-                  <div>
-                    <p className="text-xs text-muted-foreground">Shares</p>
-                    <p className="font-mono font-medium text-foreground">{position.shares}</p>
+                  {/* Positions Grid */}
+                  <div className="space-y-3">
+                    <Label className="text-xs text-muted-foreground">Current Holdings</Label>
+                    <div className="flex flex-wrap gap-2">
+                      {position.positions.map((pos: any, idx: number) => (
+                        <div
+                          key={idx}
+                          className="flex items-center gap-2 rounded-md border border-border bg-secondary/30 px-3 py-1.5 transition-colors hover:bg-secondary/50"
+                        >
+                          <span className="text-xs font-bold text-primary">{pos.symbol}</span>
+                          <span className="text-xs text-muted-foreground">|</span>
+                          <span className="text-xs font-medium text-foreground">{pos.position}</span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground">Avg Price</p>
-                    <p className="font-mono font-medium text-foreground">${position.avgPrice.toFixed(2)}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground">Current</p>
-                    <p className="font-mono font-medium text-foreground">${position.currentPrice.toFixed(2)}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground">Value</p>
-                    <p className="font-mono font-medium text-foreground">${position.value.toLocaleString()}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground">P/L</p>
-                    <p
-                      className={`font-mono font-medium ${position.profitLoss >= 0 ? "text-success" : "text-destructive"}`}
-                    >
-                      {position.profitLoss >= 0 ? "+" : ""}${position.profitLoss.toFixed(2)}
-                      <span className="ml-1 text-xs">
-                        ({position.profitLossPercent >= 0 ? "+" : ""}
-                        {position.profitLossPercent.toFixed(2)}%)
-                      </span>
-                    </p>
+
+                  {/* Trade Action */}
+                  <div className="space-y-2 pt-2">
+                    <Label htmlFor={`quantity-${index}`} className="text-sm font-medium">
+                      Order Quantity
+                    </Label>
+                    <div className="flex gap-2">
+                      <Input
+                        id={`quantity-${index}`}
+                        type="number"
+                        placeholder="Enter quantity"
+                        className="flex-1"
+                      />
+                      <Button size="sm" className="bg-success hover:bg-success/90">
+                        Buy
+                      </Button>
+                      <Button size="sm" variant="destructive">
+                        Sell
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </div>
