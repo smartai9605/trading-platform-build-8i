@@ -57,7 +57,7 @@ export function Sidebar() {
       )}
     >
       <div className="flex h-16 items-center justify-between border-b border-sidebar-border px-4">
-        {!isCollapsed && <h1 className="font-mono text-xl font-bold text-primary">TradeHub</h1>}
+        {!isCollapsed && <h1 className="font-mono text-xl font-bold text-primary">Freedomtracker</h1>}
         <Button
           variant="ghost"
           size="icon"
