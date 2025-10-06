@@ -264,31 +264,35 @@ export default function PortfolioPage() {
           <h1 className="text-3xl font-bold text-foreground">Portfolio</h1>
           <p className="text-muted-foreground">Manage your positions and execute trades</p>
         </div>
-        <div className="flex gap-3">
-          <Button className="bg-sky-500 text-primary-foreground hover:bg-sky-500/90" onClick={getAccounts}>
-            <ArrowUpRight className="mr-2 h-4 w-4" />
-            Accounts
+        <div className="flex flex-wrap gap-2 sm:gap-3">
+          <Button className="bg-sky-500 text-primary-foreground hover:bg-sky-500/90 text-xs sm:text-sm" onClick={getAccounts}>
+            <ArrowUpRight className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
+            <span className="hidden sm:inline">Accounts</span>
+            <span className="sm:hidden">Acc</span>
           </Button>
-          <Button className="bg-success text-success-foreground hover:bg-success/90" onClick={handleBuyAllPositions}>
-            <ArrowUpRight className="mr-2 h-4 w-4" />
-            Buy All
+          <Button className="bg-success text-success-foreground hover:bg-success/90 text-xs sm:text-sm" onClick={handleBuyAllPositions}>
+            <ArrowUpRight className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
+            <span className="hidden sm:inline">Buy All</span>
+            <span className="sm:hidden">Buy</span>
           </Button>
-          <Button variant="destructive" onClick={handleSellAllPositions}>
-            <ArrowDownRight className="mr-2 h-4 w-4" />
-            Sell All
+          <Button variant="destructive" className="text-xs sm:text-sm" onClick={handleSellAllPositions}>
+            <ArrowDownRight className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
+            <span className="hidden sm:inline">Sell All</span>
+            <span className="sm:hidden">Sell</span>
           </Button>
           <Button
             variant="outline"
-            className="border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground bg-transparent"
+            className="border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground bg-transparent text-xs sm:text-sm"
             onClick={handleCloseAllPositions}
           >
-            <X className="mr-2 h-4 w-4" />
-            Close All Positions
+            <X className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
+            <span className="hidden sm:inline">Close All Positions</span>
+            <span className="sm:hidden">Close</span>
           </Button>
         </div>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-3">
+      <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
         <Card className="bg-card border-border">
           <CardHeader>
             <CardDescription className="text-muted-foreground">Total Portfolio Value</CardDescription>
@@ -370,25 +374,29 @@ export default function PortfolioPage() {
                     <Label htmlFor={`quantity-${index}`} className="text-sm font-medium">
                       Order Quantity
                     </Label>
-                    <div className="flex gap-2">
-                      <Input
-                        id={`quantity-${index}`}
-                        type="number"
-                        placeholder="Enter quantity"
-                        className="flex-1"
-                      />
-                      <Input
-                        id={`symbol-${index}`}
-                        type="text"
-                        placeholder="Enter symbol"
-                        className="flex-1"
-                      />
-                      <Button size="sm" className="bg-success hover:bg-success/90" onClick={() => handleBuySinglePosition(position.account, index)}>
-                        Buy
-                      </Button>
-                      <Button size="sm" variant="destructive" onClick={() => handleSellSinglePosition(position.account, index)}>
-                        Sell
-                      </Button>
+                    <div className="flex flex-col sm:flex-row gap-2">
+                      <div className="flex gap-2 flex-1">
+                        <Input
+                          id={`quantity-${index}`}
+                          type="number"
+                          placeholder="Quantity"
+                          className="flex-1"
+                        />
+                        <Input
+                          id={`symbol-${index}`}
+                          type="text"
+                          placeholder="Symbol"
+                          className="flex-1"
+                        />
+                      </div>
+                      <div className="flex gap-2">
+                        <Button size="sm" className="bg-success hover:bg-success/90 flex-1 sm:flex-none" onClick={() => handleBuySinglePosition(position.account, index)}>
+                          Buy
+                        </Button>
+                        <Button size="sm" variant="destructive" className="flex-1 sm:flex-none" onClick={() => handleSellSinglePosition(position.account, index)}>
+                          Sell
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -400,8 +408,8 @@ export default function PortfolioPage() {
 
       {/* Confirmation Modal */}
       {confirmationModal.isOpen && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-card border border-border rounded-lg p-6 max-w-md w-full mx-4 shadow-lg">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-card border border-border rounded-lg p-4 sm:p-6 max-w-md w-full shadow-lg">
             <div className="flex items-center gap-3 mb-4">
               <div className="flex h-10 w-10 items-center justify-center rounded-full bg-destructive/10">
                 <AlertTriangle className="h-5 w-5 text-destructive" />
