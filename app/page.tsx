@@ -4,50 +4,53 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { ArrowUpRight, ArrowDownRight, X } from "lucide-react"
+import { ArrowUpRight, ArrowDownRight, X, AlertTriangle } from "lucide-react"
 import { useEffect, useState } from "react"
 import { toast } from "sonner"
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
 
-const openPositions = [
-  {
-    symbol: "AAPL",
-    name: "Apple Inc.",
-    shares: 50,
-    avgPrice: 178.25,
-    currentPrice: 182.5,
-    value: 9125,
-    profitLoss: 212.5,
-    profitLossPercent: 2.38,
-  },
-  {
-    symbol: "TSLA",
-    name: "Tesla Inc.",
-    shares: 25,
-    avgPrice: 245.8,
-    currentPrice: 238.45,
-    value: 5961.25,
-    profitLoss: -183.75,
-    profitLossPercent: -2.99,
-  },
-  {
-    symbol: "NVDA",
-    name: "NVIDIA Corp.",
-    shares: 30,
-    avgPrice: 485.6,
-    currentPrice: 512.3,
-    value: 15369,
-    profitLoss: 801,
-    profitLossPercent: 5.5,
-  },
-]
 
 export default function PortfolioPage() {
 
   const [accounts, setAccounts] = useState<any[]>([])
   const [openPositions, setOpenPositions] = useState<any[]>([])
   const [combinedPositions, setCombinedPositions] = useState<any[]>([])
+  const [confirmationModal, setConfirmationModal] = useState<{
+    isOpen: boolean
+    title: string
+    message: string
+    onConfirm: () => void
+    confirmText?: string
+    cancelText?: string
+  }>({
+    isOpen: false,
+    title: "",
+    message: "",
+    onConfirm: () => {},
+    confirmText: "OK",
+    cancelText: "Cancel"
+  })
+
+  const showConfirmationModal = (title: string, message: string, onConfirm: () => void, confirmText = "OK", cancelText = "Cancel") => {
+    setConfirmationModal({
+      isOpen: true,
+      title,
+      message,
+      onConfirm,
+      confirmText,
+      cancelText
+    })
+  }
+
+  const hideConfirmationModal = () => {
+    setConfirmationModal(prev => ({ ...prev, isOpen: false }))
+  }
+
+  const handleConfirm = () => {
+    confirmationModal.onConfirm()
+    hideConfirmationModal()
+  }
 
   const getAccounts = async () => {
     const accounts = await fetch(`${BACKEND_URL}/portfolio`, {
@@ -133,6 +136,16 @@ export default function PortfolioPage() {
     // }
   }
 
+  const handleBuyAllPositions = () => {
+    showConfirmationModal(
+      "Confirm Buy All Positions",
+      "Are you sure you want to buy positions for all accounts? This action cannot be undone.",
+      buyAllPositions,
+      "Buy All",
+      "Cancel"
+    )
+  }
+
 
   const closeAllPositions = async () => {
     console.log("Close All")
@@ -151,6 +164,16 @@ export default function PortfolioPage() {
     // } else {
     //   toast.error("Sell all positions failed")
     // }
+  }
+
+  const handleCloseAllPositions = () => {
+    showConfirmationModal(
+      "Confirm Close All Positions",
+      "Are you sure you want to close all positions? This action cannot be undone.",
+      closeAllPositions,
+      "Close All",
+      "Cancel"
+    )
   }
 
   const buySinglePosition = async (account: string, index: number) => {
@@ -182,12 +205,48 @@ export default function PortfolioPage() {
     // }
   }
 
+  const handleBuySinglePosition = (account: string, index: number) => {
+    const symbol = document.getElementById(`symbol-${index}`) as HTMLInputElement
+    const quantity = document.getElementById(`quantity-${index}`) as HTMLInputElement
+    
+    showConfirmationModal(
+      "Confirm Buy Position",
+      `Are you sure you want to buy ${quantity?.value || '0'} shares of ${symbol?.value || 'symbol'} for account ${account}?`,
+      () => buySinglePosition(account, index),
+      "Buy",
+      "Cancel"
+    )
+  }
+
   const sellAllPositions = async () => {
     console.log("Sell All")
   }
 
+  const handleSellAllPositions = () => {
+    showConfirmationModal(
+      "Confirm Sell All Positions",
+      "Are you sure you want to sell all positions? This action cannot be undone.",
+      sellAllPositions,
+      "Sell All",
+      "Cancel"
+    )
+  }
+
   const sellSinglePosition = (account: string) => {
     console.log("Sell", account)
+  }
+
+  const handleSellSinglePosition = (account: string, index: number) => {
+    const symbol = document.getElementById(`symbol-${index}`) as HTMLInputElement
+    const quantity = document.getElementById(`quantity-${index}`) as HTMLInputElement
+    
+    showConfirmationModal(
+      "Confirm Sell Position",
+      `Are you sure you want to sell ${quantity?.value || '0'} shares of ${symbol?.value || 'symbol'} for account ${account}?`,
+      () => sellSinglePosition(account),
+      "Sell",
+      "Cancel"
+    )
   }
 
   useEffect(() => {
@@ -210,18 +269,18 @@ export default function PortfolioPage() {
             <ArrowUpRight className="mr-2 h-4 w-4" />
             Accounts
           </Button>
-          <Button className="bg-success text-success-foreground hover:bg-success/90" onClick={buyAllPositions}>
+          <Button className="bg-success text-success-foreground hover:bg-success/90" onClick={handleBuyAllPositions}>
             <ArrowUpRight className="mr-2 h-4 w-4" />
             Buy All
           </Button>
-          <Button variant="destructive" onClick={sellAllPositions}>
+          <Button variant="destructive" onClick={handleSellAllPositions}>
             <ArrowDownRight className="mr-2 h-4 w-4" />
             Sell All
           </Button>
           <Button
             variant="outline"
             className="border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground bg-transparent"
-            onClick={closeAllPositions}
+            onClick={handleCloseAllPositions}
           >
             <X className="mr-2 h-4 w-4" />
             Close All Positions
@@ -324,10 +383,10 @@ export default function PortfolioPage() {
                         placeholder="Enter symbol"
                         className="flex-1"
                       />
-                      <Button size="sm" className="bg-success hover:bg-success/90" onClick={() => buySinglePosition(position.account, index)}>
+                      <Button size="sm" className="bg-success hover:bg-success/90" onClick={() => handleBuySinglePosition(position.account, index)}>
                         Buy
                       </Button>
-                      <Button size="sm" variant="destructive" onClick={() => sellSinglePosition(position.account)}>
+                      <Button size="sm" variant="destructive" onClick={() => handleSellSinglePosition(position.account, index)}>
                         Sell
                       </Button>
                     </div>
@@ -338,6 +397,37 @@ export default function PortfolioPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Confirmation Modal */}
+      {confirmationModal.isOpen && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-card border border-border rounded-lg p-6 max-w-md w-full mx-4 shadow-lg">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-destructive/10">
+                <AlertTriangle className="h-5 w-5 text-destructive" />
+              </div>
+              <h3 className="text-lg font-semibold text-foreground">{confirmationModal.title}</h3>
+            </div>
+            <p className="text-muted-foreground mb-6">{confirmationModal.message}</p>
+            <div className="flex gap-3 justify-end">
+              <Button
+                variant="outline"
+                onClick={hideConfirmationModal}
+                className="border-border text-foreground hover:bg-secondary"
+              >
+                {confirmationModal.cancelText}
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={handleConfirm}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                {confirmationModal.confirmText}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
