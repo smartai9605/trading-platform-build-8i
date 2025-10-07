@@ -55,7 +55,7 @@ export default function PortfolioPage() {
   const getAccounts = async () => {
     const accounts = await fetch(`${BACKEND_URL}/portfolio`, {
     })
-    console.log(accounts)
+    console.log("accounts : ", accounts)
     if (accounts.ok) {
       const data = await accounts.json()
       console.log(data)
@@ -75,26 +75,38 @@ export default function PortfolioPage() {
       
       console.log('Positions grouped by account:', positionsByAccount)
       
-      // Convert to array format if needed
-      const combinedPositions = Object.entries(positionsByAccount).map(([account, positions]) => ({
-        account,
-        positions,
-        totalMarketValue: positions.reduce((sum, pos) => sum + (pos.marketValue || 0), 0),
-        positionCount: positions.length
-      }))
-
-      setCombinedPositions(combinedPositions)
+      // Create detailed account information array
+      const detailedAccounts: any[] = []
       
-      console.log('Combined positions:', combinedPositions)
+      // Process each account from account_summary
+      if (data.account_summary) {
+        Object.entries(data.account_summary).forEach(([accountId, accountData]: [string, any]) => {
+          const accountPositions = positionsByAccount[accountId] || []
+          
+          const detailedAccount = {
+            account: accountId,
+            NetLiquidation: accountData.NetLiquidation,
+            TotalCashValue: accountData.TotalCashValue,
+            positions: accountPositions,
+            totalMarketValue: accountPositions.reduce((sum, pos) => sum + (pos.marketValue || 0), 0),
+            positionCount: accountPositions.length
+          }
+          
+          detailedAccounts.push(detailedAccount)
+        })
+      }
       
-      setAccounts(combinedPositions)
+      console.log('Detailed accounts:', detailedAccounts)
+      
+      setCombinedPositions(detailedAccounts)
+      setAccounts(detailedAccounts)
       setOpenPositions(data.positions || [])
     }
   }
 
   const buyAllPositions = async () => {
     // Collect all accounts with their quantities
-    const accountEntries: string[] = []
+    const accountEntries: any[] = []
     let symbol = ""
     
     combinedPositions.forEach((position, index) => {
@@ -102,38 +114,46 @@ export default function PortfolioPage() {
       const quantityInput = document.getElementById(`quantity-${index}`) as HTMLInputElement
       
       if (quantityInput?.value) {
-        accountEntries.push(`{${position.account} , ${quantityInput.value}}`)
+        accountEntries.push({
+          "account": position.account,
+          "quantity": quantityInput.value,
+          "symbol": symbolInput.value
+        })
         if (symbolInput?.value) {
           symbol = symbolInput.value
         }
       }
     })
     
-    const accountString = accountEntries.join(" , ")
+    console.log("Account entries:", JSON.stringify(accountEntries, null, 2))
     
-    const payload = {
-      "symbol": symbol,
-      "orderType": "buy",
-      "account": accountString,
-      "type": "quantity"
+    for (const account of accountEntries) {
+      const payload = {
+        "symbol": account.symbol,
+        "orderType": "buy",
+        "account": account.account,
+        "tradeValue": account.quantity,
+        "type": "quantity",
+        "price" : "100"
+      }
+      console.log("buy single position payload : ", JSON.stringify(payload))
+      
+      const res = await fetch(`${BACKEND_URL}/futuresignal`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      })
+      if (res.ok) {
+        const data = await res.json()
+        console.log(data)
+        getAccounts()
+        toast.success("Buy single position successful")
+      } else {
+        toast.error("Buy single position failed")
+      }
     }
-    console.log(JSON.stringify(payload))
-
-    // const res = await fetch(`${BACKEND_URL}/futureall`, {
-    //   method: "POST",
-    //   headers: {
-    //     "Content-Type": "application/json",
-    //   },
-    //   body: JSON.stringify(payload),
-    // })
-
-    // if (res.ok) {
-    //   const data = await res.json()
-    //   console.log(data)
-    //   toast.success("Buy all positions successful")
-    // } else {
-    //   toast.error("Buy all positions failed")
-    // }
   }
 
   const handleBuyAllPositions = () => {
@@ -147,23 +167,53 @@ export default function PortfolioPage() {
   }
 
 
-  const closeAllPositions = async () => {
-    console.log("Close All")
-
-    // const res = await fetch(`${BACKEND_URL}/closeall`, {
-    //   method: "GET",
-    //   headers: {
-    //     "Content-Type": "application/json",
-    //   },
-    // })
-
-    // if (res.ok) {
-    //   const data = await res.json()
-    //   console.log(data)
-    //   toast.success("Sell all positions successful")
-    // } else {
-    //   toast.error("Sell all positions failed")
-    // }
+  const sellAllPositions = async () => {
+    // Collect all accounts with their quantities
+    const accountEntries: any[] = []
+    let symbol = ""
+    
+    combinedPositions.forEach((position, index) => {
+      const symbolInput = document.getElementById(`symbol-${index}`) as HTMLInputElement
+      const quantityInput = document.getElementById(`quantity-${index}`) as HTMLInputElement
+      
+      if (quantityInput?.value) {
+        accountEntries.push({
+          "account": position.account,
+          "quantity": quantityInput.value,
+          "symbol": symbolInput.value
+        })
+        if (symbolInput?.value) {
+          symbol = symbolInput.value
+        }
+      }
+    })
+    
+    for (const account of accountEntries) {
+      const payload = {
+        "symbol": account.symbol,
+        "orderType": "sell",
+        "account": account.account,
+        "tradeValue": account.quantity,
+        "type": "quantity",
+        "price" : "100"
+      }
+      console.log("close single position payload : ", JSON.stringify(payload))
+      
+      const res = await fetch(`${BACKEND_URL}/futuresignal`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      })
+      if (res.ok) {
+        const data = await res.json()
+        getAccounts()
+        toast.success("Close single position successful")
+      } else {
+        toast.error("Close single position failed")
+      }
+    }
   }
 
   const handleCloseAllPositions = () => {
@@ -183,26 +233,29 @@ export default function PortfolioPage() {
     const payload = {
       "symbol": symbol.value,
       "orderType": "buy",
-      "account": `{${account} , ${quantity.value}}`,
-      "type" : "quantity"
+      "tradeValue": quantity.value,
+      "account": account,
+      "type" : "quantity",
+      "price" : "100"
     }
     console.log(JSON.stringify(payload))
 
-    // const res = await fetch(`${BACKEND_URL}/futureall`, {
-    //   method: "POST",
-    //   headers: {
-    //     "Content-Type": "application/json",
-    //   },
-    //   body: JSON.stringify(payload),
-    // })
+    const res = await fetch(`${BACKEND_URL}/futuresignal`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    })
 
-    // if (res.ok) {
-    //   const data = await res.json()
-    //   console.log(data)
-    //   toast.success("Buy single position successful")
-    // } else {
-    //   toast.error("Buy single position failed")
-    // }
+    if (res.ok) {
+      const data = await res.json()
+      console.log(data)
+      getAccounts()
+      toast.success("Buy single position successful")
+    } else {
+      toast.error("Buy single position failed")
+    }
   }
 
   const handleBuySinglePosition = (account: string, index: number) => {
@@ -218,8 +271,21 @@ export default function PortfolioPage() {
     )
   }
 
-  const sellAllPositions = async () => {
-    console.log("Sell All")
+  const closeAllPositions = async () => {
+    const res = await fetch(`${BACKEND_URL}/closeall`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    })
+    if (res.ok) {
+      const data = await res.json()
+      console.log(data)
+      getAccounts()
+      toast.success("Close all positions successful")
+    } else {
+      toast.error("Close all positions failed")
+    }
   }
 
   const handleSellAllPositions = () => {
@@ -232,8 +298,36 @@ export default function PortfolioPage() {
     )
   }
 
-  const sellSinglePosition = (account: string) => {
+  const sellSinglePosition = async (account: string, index: number) => {
     console.log("Sell", account)
+    const symbol = document.getElementById(`symbol-${index}`) as HTMLInputElement
+    const quantity = document.getElementById(`quantity-${index}`) as HTMLInputElement
+    const payload = {
+      "symbol": symbol.value,
+      "orderType": "sell",
+      "tradeValue": quantity.value,
+      "account": account,
+      "type" : "quantity",
+      "price" : "100"
+    }
+    console.log(JSON.stringify(payload))
+
+    const res = await fetch(`${BACKEND_URL}/futuresignal`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    })
+
+    if (res.ok) {
+      const data = await res.json()
+      console.log(data)
+      getAccounts()
+      toast.success("Sell single position successful")
+    } else {
+      toast.error("Sell single position failed")
+    }
   }
 
   const handleSellSinglePosition = (account: string, index: number) => {
@@ -243,7 +337,7 @@ export default function PortfolioPage() {
     showConfirmationModal(
       "Confirm Sell Position",
       `Are you sure you want to sell ${quantity?.value || '0'} shares of ${symbol?.value || 'symbol'} for account ${account}?`,
-      () => sellSinglePosition(account),
+      () => sellSinglePosition(account, index),
       "Sell",
       "Cancel"
     )
