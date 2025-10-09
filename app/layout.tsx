@@ -6,10 +6,11 @@ import { Analytics } from "@vercel/analytics/next"
 import { Sidebar } from "@/components/sidebar"
 import { ProtectedRoute } from "@/components/protected-route"
 import { Suspense } from "react"
+import { Toaster } from "sonner"
 import "./globals.css"
 
 export const metadata: Metadata = {
-  title: "TradeHub - Trading Management Platform",
+  title: "freedomtracker - Trading Management Platform",
   description: "Professional trading management platform with AI-powered insights",
   generator: "v0.app",
 }
@@ -30,6 +31,7 @@ export default function RootLayout({
             <main className="flex-1 overflow-y-auto">{children}</main>
           </div>
         </ProtectedRoute>
+        <Toaster />
         <Analytics />
       </body>
     </html>

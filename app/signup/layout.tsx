@@ -2,7 +2,7 @@ import type React from "react"
 import type { Metadata } from "next"
 
 export const metadata: Metadata = {
-  title: "Sign Up - TradeHub",
+  title: "Sign Up - Freedomtracker",
   description: "Create your trading account",
 }
 
