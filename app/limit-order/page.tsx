@@ -147,36 +147,78 @@ export default function LimitOrderPage() {
     )
   }
 
-  const buySinglePosition = async (account: string, index: number, symbol: string, quantity: string, highTarget: string, lowTarget: string) => {
-        
+  const buySinglePosition = async (account: string, index: number, symbol: string, quantity: string, lowTarget: string) => {
+    
+    const payload = {
+      "symbol": symbol,
+      "orderType": "buy",
+      "account": account,
+      "tradeValue": quantity,
+      "price": lowTarget,
+    }
+    const res = await fetch(`${BACKEND_URL}/futurelimit`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    })
+    if (res.ok) {
+      toast.success("Buy limit order placed successfully!")
+    } else {
+      toast.error("Buy limit order failed")
+    }
     toast.success("Buy limit order placed successfully!")
   }
 
   const handleBuySinglePosition = (account: string, index: number) => {
     const symbol = document.getElementById(`symbol-${index}`) as HTMLInputElement
     const quantity = document.getElementById(`quantity-${index}`) as HTMLInputElement
-    const highTarget = document.getElementById(`high-target-${index}`) as HTMLInputElement
     const lowTarget = document.getElementById(`low-target-${index}`) as HTMLInputElement
 
     console.log("Buy Single Position Order : ", {
       account: account,
       symbol: symbol?.value || '',
       quantity: quantity?.value || '',
-      highTarget: highTarget?.value || '',
       lowTarget: lowTarget?.value || ''
     })
     
-    const highTargetText = highTarget?.value ? `High Target: $${highTarget.value}` : ""
     const lowTargetText = lowTarget?.value ? `Low Target: $${lowTarget.value}` : ""
-    const targetText = [highTargetText, lowTargetText].filter(Boolean).join(", ")
     
     showConfirmationModal(
       "Confirm Buy Limit Order",
-      `Are you sure you want to place a buy limit order for ${quantity?.value || '0'} shares of ${symbol?.value || 'symbol'} with ${targetText} for account ${account}?`,
-      () => buySinglePosition(account, index, symbol?.value || '', quantity?.value || '', highTarget?.value || '', lowTarget?.value || ''),
+      `Are you sure you want to place a buy limit order for ${quantity?.value || '0'} shares of ${symbol?.value || 'symbol'} with ${lowTargetText} for account ${account}?`,
+      () => buySinglePosition(account, index, symbol?.value || '', quantity?.value || '', lowTarget?.value || ''),
       "Buy",
       "Cancel"
     )
+  }
+
+  const handleCloseSinglelimitPosition = (account: string, index: number) => {
+    showConfirmationModal(
+      "Confirm Close Limit Order",
+      `Are you sure you want to close the limit order for ${account}?`,
+      () => closeSinglelimitPosition(account, index),
+      "Close",
+      "Cancel"
+    )
+  }
+
+  const closeSinglelimitPosition = async (account: string, index: number) => {
+    const res = await fetch(`${BACKEND_URL}/futurelimitCancel`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        "account": account,
+      }),
+    })
+    if (res.ok) {
+      toast.success("Close limit order placed successfully!")
+    } else {
+      toast.error("Close limit order failed")
+    }
   }
 
   const closeAllPositions = async () => {
@@ -402,13 +444,6 @@ export default function LimitOrderPage() {
                           className="flex-1"
                         />
                         <Input
-                          id={`high-target-${index}`}
-                          type="number"
-                          step="0.01"
-                          placeholder="High Target"
-                          className="flex-1"
-                        />
-                        <Input
                           id={`low-target-${index}`}
                           type="number"
                           step="0.01"
@@ -422,6 +457,9 @@ export default function LimitOrderPage() {
                         </Button>
                         <Button size="sm" variant="destructive" className="flex-1 sm:flex-none" onClick={() => handleSellSinglePosition(position.account, index)}>
                           Sell
+                        </Button>
+                        <Button size="sm" variant="outline" className="flex-1 sm:flex-none" onClick={() => handleCloseSinglelimitPosition(position.account, index)}>
+                          Close
                         </Button>
                         <Button size="sm" variant="outline" className="flex-1 sm:flex-none" onClick={() => handleSLTPSinglePosition(position.account, index)}>
                           <Settings className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
