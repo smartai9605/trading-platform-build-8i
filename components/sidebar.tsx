@@ -10,15 +10,15 @@ import { useAuth } from "@/hooks/useAuth"
 
 const navigation = [
   {
-    name: "Market Order",
+    name: "Main",
     href: "/",
     icon: LayoutDashboard,
   },
-  {
-    name: "Limit Order",
-    href: "/limit-order",
-    icon: LayoutDashboard,
-  },
+  // {
+  //   name: "Limit Order",
+  //   href: "/limit-order",
+  //   icon: LayoutDashboard,
+  // },
   {
     name: "AI News",
     href: "/ai-news",

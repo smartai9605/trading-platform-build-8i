@@ -75,7 +75,7 @@ export default function SignInPage() {
       <Card className="w-full max-w-md bg-card border-border">
         <CardHeader className="space-y-1">
           <div className="flex justify-center mb-4">
-            <div className="font-mono text-3xl font-bold text-primary">TradeHub</div>
+            <div className="font-mono text-3xl font-bold text-primary">Freedomtracker</div>
           </div>
           <CardTitle className="text-2xl font-bold text-center text-foreground">Welcome back</CardTitle>
           <CardDescription className="text-center text-muted-foreground">
