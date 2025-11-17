@@ -20,6 +20,11 @@ const navigation = [
   //   icon: LayoutDashboard,
   // },
   {
+    name : "Strategy Management",
+    href: "/strategy-management",
+    icon: LayoutDashboard,
+  },
+  {
     name: "AI News",
     href: "/ai-news",
     icon: Newspaper,
