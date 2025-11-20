@@ -232,11 +232,9 @@ export default function PortfolioPage() {
     const quantity = document.getElementById(`quantity-${index}`) as HTMLInputElement
     const payload = {
       "symbol": symbol.value,
-      "orderType": "buy",
-      "tradeValue": quantity.value,
+      "type": "buy",
+      "quantity": parseInt(quantity.value),
       "account": account,
-      "type" : "quantity",
-      "price" : "100"
     }
     console.log(JSON.stringify(payload))
 
@@ -304,11 +302,9 @@ export default function PortfolioPage() {
     const quantity = document.getElementById(`quantity-${index}`) as HTMLInputElement
     const payload = {
       "symbol": symbol.value,
-      "orderType": "sell",
-      "tradeValue": quantity.value,
+      "type": "sell",
+      "quantity": parseInt(quantity.value),
       "account": account,
-      "type" : "quantity",
-      "price" : "100"
     }
     console.log(JSON.stringify(payload))
 
