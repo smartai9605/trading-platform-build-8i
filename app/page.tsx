@@ -13,6 +13,8 @@ const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
 
 export default function PortfolioPage() {
 
+  const [symbol, setSymbol] = useState<string>("")
+  const [quantity, setQuantity] = useState<number>(0)
   const [accounts, setAccounts] = useState<any[]>([])
   const [openPositions, setOpenPositions] = useState<any[]>([])
   const [combinedPositions, setCombinedPositions] = useState<any[]>([])
@@ -106,53 +108,35 @@ export default function PortfolioPage() {
 
   const buyAllPositions = async () => {
     // Collect all accounts with their quantities
-    const accountEntries: any[] = []
-    let symbol = ""
+    console.log("symbol : ", symbol)
+    console.log("quantity : ", quantity)
     
-    combinedPositions.forEach((position, index) => {
-      const symbolInput = document.getElementById(`symbol-${index}`) as HTMLInputElement
-      const quantityInput = document.getElementById(`quantity-${index}`) as HTMLInputElement
-      
-      if (quantityInput?.value) {
-        accountEntries.push({
-          "account": position.account,
-          "quantity": quantityInput.value,
-          "symbol": symbolInput.value
-        })
-        if (symbolInput?.value) {
-          symbol = symbolInput.value
-        }
-      }
+    // Extract account IDs
+    const accountIds = accounts.map(acc => acc.account)
+
+
+    const payload = {
+      "symbol": symbol,
+      "type": "buy",
+      "quantity": quantity,
+      "account": accountIds,
+    }
+
+
+    const res = await fetch(`${BACKEND_URL}/futuresignal`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
     })
-    
-    console.log("Account entries:", JSON.stringify(accountEntries, null, 2))
-    
-    for (const account of accountEntries) {
-      const payload = {
-        "symbol": account.symbol,
-        "orderType": "buy",
-        "account": account.account,
-        "tradeValue": account.quantity,
-        "type": "quantity",
-        "price" : "100"
-      }
-      console.log("buy single position payload : ", JSON.stringify(payload))
-      
-      const res = await fetch(`${BACKEND_URL}/futuresignal`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-      })
-      if (res.ok) {
-        const data = await res.json()
-        console.log(data)
-        getAccounts()
-        toast.success("Buy single position successful")
-      } else {
-        toast.error("Buy single position failed")
-      }
+    if (res.ok) {
+      const data = await res.json()
+      console.log(data)
+      getAccounts()
+      toast.success("Buy single position successful")
+    } else {
+      toast.error("Buy single position failed")
     }
   }
 
@@ -169,50 +153,33 @@ export default function PortfolioPage() {
 
   const sellAllPositions = async () => {
     // Collect all accounts with their quantities
-    const accountEntries: any[] = []
-    let symbol = ""
     
-    combinedPositions.forEach((position, index) => {
-      const symbolInput = document.getElementById(`symbol-${index}`) as HTMLInputElement
-      const quantityInput = document.getElementById(`quantity-${index}`) as HTMLInputElement
-      
-      if (quantityInput?.value) {
-        accountEntries.push({
-          "account": position.account,
-          "quantity": quantityInput.value,
-          "symbol": symbolInput.value
-        })
-        if (symbolInput?.value) {
-          symbol = symbolInput.value
-        }
-      }
+    // Extract account IDs
+    const accountIds = accounts.map(acc => acc.account)
+
+
+    const payload = {
+      "symbol": symbol,
+      "type": "sell",
+      "quantity": quantity,
+      "account": accountIds,
+    }
+
+
+    const res = await fetch(`${BACKEND_URL}/futuresignal`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
     })
-    
-    for (const account of accountEntries) {
-      const payload = {
-        "symbol": account.symbol,
-        "orderType": "sell",
-        "account": account.account,
-        "tradeValue": account.quantity,
-        "type": "quantity",
-        "price" : "100"
-      }
-      console.log("close single position payload : ", JSON.stringify(payload))
-      
-      const res = await fetch(`${BACKEND_URL}/futuresignal`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-      })
-      if (res.ok) {
-        const data = await res.json()
-        getAccounts()
-        toast.success("Close single position successful")
-      } else {
-        toast.error("Close single position failed")
-      }
+    if (res.ok) {
+      const data = await res.json()
+      console.log(data)
+      getAccounts()
+      toast.success("Buy single position successful")
+    } else {
+      toast.error("Buy single position failed")
     }
   }
 
@@ -348,31 +315,61 @@ export default function PortfolioPage() {
   const cashBalance = 25430.75
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="p-3 sm:p-6 space-y-4 sm:space-y-6">
+      {/* Header Section */}
+      <div className="space-y-4">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Portfolio</h1>
-          <p className="text-muted-foreground">Manage your positions and execute trades</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Portfolio</h1>
+          <p className="text-sm sm:text-base text-muted-foreground">Manage your positions and execute trades</p>
         </div>
-        <div className="flex flex-wrap gap-2 sm:gap-3">
-          <Button className="bg-sky-500 text-primary-foreground hover:bg-sky-500/90 text-xs sm:text-sm" onClick={getAccounts}>
+        
+        {/* Symbol and Quantity Inputs */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="symbol" className="text-sm">Symbol</Label>
+            <Input 
+              id="symbol" 
+              type="text" 
+              placeholder="Symbol" 
+              className="h-10"
+              onChange={(e) => setSymbol(e.target.value)}
+              value={symbol}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="amount" className="text-sm">Quantity</Label>
+            <Input 
+              id="amount" 
+              type="number" 
+              placeholder="Quantity" 
+              className="h-10"
+              step="0.01"
+              value={quantity}
+              onChange={(e) => setQuantity(parseInt(e.target.value))}
+            />
+          </div>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2 sm:gap-3">
+          <Button className="bg-sky-500 text-primary-foreground hover:bg-sky-500/90 text-xs sm:text-sm w-full sm:w-auto" onClick={getAccounts}>
             <ArrowUpRight className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
             <span className="hidden sm:inline">Accounts</span>
             <span className="sm:hidden">Acc</span>
           </Button>
-          <Button className="bg-success text-success-foreground hover:bg-success/90 text-xs sm:text-sm" onClick={handleBuyAllPositions}>
+          <Button className="bg-success text-success-foreground hover:bg-success/90 text-xs sm:text-sm w-full sm:w-auto" onClick={handleBuyAllPositions}>
             <ArrowUpRight className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
             <span className="hidden sm:inline">Buy All</span>
             <span className="sm:hidden">Buy</span>
           </Button>
-          <Button variant="destructive" className="text-xs sm:text-sm" onClick={handleSellAllPositions}>
+          <Button variant="destructive" className="text-xs sm:text-sm w-full sm:w-auto" onClick={handleSellAllPositions}>
             <ArrowDownRight className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
             <span className="hidden sm:inline">Sell All</span>
             <span className="sm:hidden">Sell</span>
           </Button>
           <Button
             variant="outline"
-            className="border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground bg-transparent text-xs sm:text-sm"
+            className="border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground bg-transparent text-xs sm:text-sm w-full sm:w-auto col-span-2 sm:col-span-1"
             onClick={handleCloseAllPositions}
           >
             <X className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
@@ -382,29 +379,30 @@ export default function PortfolioPage() {
         </div>
       </div>
 
-      <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+      {/* Stats Cards */}
+      <div className="grid gap-3 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
         <Card className="bg-card border-border">
-          <CardHeader>
-            <CardDescription className="text-muted-foreground">Total Portfolio Value</CardDescription>
-            <CardTitle className="text-3xl font-mono text-foreground">
+          <CardHeader className="pb-3 sm:pb-6">
+            <CardDescription className="text-xs sm:text-sm text-muted-foreground">Total Portfolio Value</CardDescription>
+            <CardTitle className="text-2xl sm:text-3xl font-mono text-foreground">
               ${totalValue.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </CardTitle>
           </CardHeader>
         </Card>
 
         <Card className="bg-card border-border">
-          <CardHeader>
-            <CardDescription className="text-muted-foreground">Cash Balance</CardDescription>
-            <CardTitle className="text-3xl font-mono text-foreground">
+          <CardHeader className="pb-3 sm:pb-6">
+            <CardDescription className="text-xs sm:text-sm text-muted-foreground">Cash Balance</CardDescription>
+            <CardTitle className="text-2xl sm:text-3xl font-mono text-foreground">
               ${cashBalance.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </CardTitle>
           </CardHeader>
         </Card>
 
         <Card className="bg-card border-border">
-          <CardHeader>
-            <CardDescription className="text-muted-foreground">Total P/L</CardDescription>
-            <CardTitle className={`text-3xl font-mono ${totalProfitLoss >= 0 ? "text-success" : "text-destructive"}`}>
+          <CardHeader className="pb-3 sm:pb-6">
+            <CardDescription className="text-xs sm:text-sm text-muted-foreground">Total P/L</CardDescription>
+            <CardTitle className={`text-2xl sm:text-3xl font-mono ${totalProfitLoss >= 0 ? "text-success" : "text-destructive"}`}>
               {totalProfitLoss >= 0 ? "+" : ""}$
               {totalProfitLoss.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </CardTitle>
@@ -412,44 +410,46 @@ export default function PortfolioPage() {
         </Card>
       </div>
 
+      {/* Open Positions Card */}
+
       <Card className="bg-card border-border">
-        <CardHeader>
-          <CardTitle className="text-foreground">Open Positions</CardTitle>
-          <CardDescription className="text-muted-foreground">Your current holdings and performance</CardDescription>
+        <CardHeader className="pb-3 sm:pb-6">
+          <CardTitle className="text-lg sm:text-xl text-foreground">Open Positions</CardTitle>
+          <CardDescription className="text-xs sm:text-sm text-muted-foreground">Your current holdings and performance</CardDescription>
         </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
+        <CardContent className="px-3 sm:px-6">
+          <div className="space-y-3 sm:space-y-4">
             {combinedPositions.map((position, index) => (
               <div
                 key={index}
-                className="rounded-lg border border-border bg-card p-6 shadow-sm transition-shadow hover:shadow-md"
+                className="rounded-lg border border-border bg-card p-3 sm:p-6 shadow-sm transition-shadow hover:shadow-md"
               >
-                <div className="space-y-4">
+                <div className="space-y-3 sm:space-y-4">
                   {/* Account Header */}
-                  <div className="flex items-center justify-between pb-3 border-b border-border">
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
-                        <span className="text-sm font-bold text-primary">{position.account.slice(0, 2).toUpperCase()}</span>
+                  <div className="flex items-center justify-between pb-2 sm:pb-3 border-b border-border">
+                    <div className="flex items-center gap-2 sm:gap-3">
+                      <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-primary/10">
+                        <span className="text-xs sm:text-sm font-bold text-primary">{position.account.slice(0, 2).toUpperCase()}</span>
                       </div>
                       <div>
                         <Label className="text-xs text-muted-foreground">Account ID</Label>
-                        <p className="font-mono text-sm font-semibold text-foreground">{position.account}</p>
+                        <p className="font-mono text-xs sm:text-sm font-semibold text-foreground break-all">{position.account}</p>
                       </div>
                     </div>
                     <div className="text-right">
                       <Label className="text-xs text-muted-foreground">Positions</Label>
-                      <p className="text-sm font-semibold text-foreground">{position.positionCount}</p>
+                      <p className="text-xs sm:text-sm font-semibold text-foreground">{position.positionCount}</p>
                     </div>
                   </div>
 
                   {/* Positions Grid */}
-                  <div className="space-y-3">
+                  <div className="space-y-2 sm:space-y-3">
                     <Label className="text-xs text-muted-foreground">Current Holdings</Label>
-                    <div className="flex flex-wrap gap-2">
+                    <div className="flex flex-wrap gap-1.5 sm:gap-2">
                       {position.positions.map((pos: any, idx: number) => (
                         <div
                           key={idx}
-                          className="flex items-center gap-2 rounded-md border border-border bg-secondary/30 px-3 py-1.5 transition-colors hover:bg-secondary/50"
+                          className="flex items-center gap-1.5 sm:gap-2 rounded-md border border-border bg-secondary/30 px-2 sm:px-3 py-1 sm:py-1.5 transition-colors hover:bg-secondary/50"
                         >
                           <span className="text-xs font-bold text-primary">{pos.symbol}</span>
                           <span className="text-xs text-muted-foreground">|</span>
@@ -461,29 +461,29 @@ export default function PortfolioPage() {
 
                   {/* Trade Action */}
                   <div className="space-y-2 pt-2">
-                    <Label htmlFor={`quantity-${index}`} className="text-sm font-medium">
+                    <Label htmlFor={`quantity-${index}`} className="text-xs sm:text-sm font-medium">
                       Order Quantity
                     </Label>
-                    <div className="flex flex-col sm:flex-row gap-2">
-                      <div className="flex gap-2 flex-1">
+                    <div className="flex flex-col gap-2">
+                      <div className="flex gap-2">
                         <Input
                           id={`quantity-${index}`}
                           type="number"
                           placeholder="Quantity"
-                          className="flex-1"
+                          className="flex-1 h-9 sm:h-10 text-sm"
                         />
                         <Input
                           id={`symbol-${index}`}
                           type="text"
                           placeholder="Symbol"
-                          className="flex-1"
+                          className="flex-1 h-9 sm:h-10 text-sm"
                         />
                       </div>
                       <div className="flex gap-2">
-                        <Button size="sm" className="bg-success hover:bg-success/90 flex-1 sm:flex-none" onClick={() => handleBuySinglePosition(position.account, index)}>
+                        <Button size="sm" className="bg-success hover:bg-success/90 flex-1 h-9 text-xs sm:text-sm" onClick={() => handleBuySinglePosition(position.account, index)}>
                           Buy
                         </Button>
-                        <Button size="sm" variant="destructive" className="flex-1 sm:flex-none" onClick={() => handleSellSinglePosition(position.account, index)}>
+                        <Button size="sm" variant="destructive" className="flex-1 h-9 text-xs sm:text-sm" onClick={() => handleSellSinglePosition(position.account, index)}>
                           Sell
                         </Button>
                       </div>
@@ -498,27 +498,27 @@ export default function PortfolioPage() {
 
       {/* Confirmation Modal */}
       {confirmationModal.isOpen && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-card border border-border rounded-lg p-4 sm:p-6 max-w-md w-full shadow-lg">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-destructive/10">
-                <AlertTriangle className="h-5 w-5 text-destructive" />
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-3 sm:p-4">
+          <div className="bg-card border border-border rounded-lg p-4 sm:p-6 max-w-md w-full shadow-lg mx-3">
+            <div className="flex items-start sm:items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
+              <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-destructive/10 flex-shrink-0">
+                <AlertTriangle className="h-4 w-4 sm:h-5 sm:w-5 text-destructive" />
               </div>
-              <h3 className="text-lg font-semibold text-foreground">{confirmationModal.title}</h3>
+              <h3 className="text-base sm:text-lg font-semibold text-foreground">{confirmationModal.title}</h3>
             </div>
-            <p className="text-muted-foreground mb-6">{confirmationModal.message}</p>
-            <div className="flex gap-3 justify-end">
+            <p className="text-sm sm:text-base text-muted-foreground mb-4 sm:mb-6 pl-10 sm:pl-0">{confirmationModal.message}</p>
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 sm:justify-end">
               <Button
                 variant="outline"
                 onClick={hideConfirmationModal}
-                className="border-border text-foreground hover:bg-secondary"
+                className="border-border text-foreground hover:bg-secondary w-full sm:w-auto order-2 sm:order-1"
               >
                 {confirmationModal.cancelText}
               </Button>
               <Button
                 variant="destructive"
                 onClick={handleConfirm}
-                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90 w-full sm:w-auto order-1 sm:order-2"
               >
                 {confirmationModal.confirmText}
               </Button>
