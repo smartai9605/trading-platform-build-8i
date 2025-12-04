@@ -134,9 +134,9 @@ export default function PortfolioPage() {
       const data = await res.json()
       console.log(data)
       getAccounts()
-      toast.success("Buy single position successful")
+      toast.success("Buy orders executed successfully across all accounts")
     } else {
-      toast.error("Buy single position failed")
+      toast.error("Buy orders failed")
     }
   }
 
@@ -177,9 +177,9 @@ export default function PortfolioPage() {
       const data = await res.json()
       console.log(data)
       getAccounts()
-      toast.success("Buy single position successful")
+      toast.success("Sell order executed successfully")
     } else {
-      toast.error("Buy single position failed")
+      toast.error("Sell order failed")
     }
   }
 
@@ -217,9 +217,9 @@ export default function PortfolioPage() {
       const data = await res.json()
       console.log(data)
       getAccounts()
-      toast.success("Buy single position successful")
+      toast.success("Buy order executed successfully")
     } else {
-      toast.error("Buy single position failed")
+      toast.error("Buy order failed")
     }
   }
 
@@ -247,9 +247,9 @@ export default function PortfolioPage() {
       const data = await res.json()
       console.log(data)
       getAccounts()
-      toast.success("Close all positions successful")
+      toast.success("All positions closed successfully")
     } else {
-      toast.error("Close all positions failed")
+      toast.error("Failed to close positions")
     }
   }
 
@@ -287,9 +287,9 @@ export default function PortfolioPage() {
       const data = await res.json()
       console.log(data)
       getAccounts()
-      toast.success("Sell single position successful")
+      toast.success("Sell order executed successfully")
     } else {
-      toast.error("Sell single position failed")
+      toast.error("Sell order failed")
     }
   }
 
@@ -312,220 +312,289 @@ export default function PortfolioPage() {
 
   const totalValue = openPositions.reduce((sum, pos) => sum + pos.value, 0)
   const totalProfitLoss = openPositions.reduce((sum, pos) => sum + pos.profitLoss, 0)
-  const cashBalance = 25430.75
+  const cashBalance = accounts.reduce((sum, acc) => {
+    const cashValue = parseFloat(acc.TotalCashValue?.value || "0")
+    return sum + cashValue
+  }, 0)
 
   return (
-    <div className="p-3 sm:p-6 space-y-4 sm:space-y-6">
-      {/* Header Section */}
-      <div className="space-y-4">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Portfolio</h1>
-          <p className="text-sm sm:text-base text-muted-foreground">Manage your positions and execute trades</p>
-        </div>
-        
-        {/* Symbol and Quantity Inputs */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="symbol" className="text-sm">Symbol</Label>
-            <Input 
-              id="symbol" 
-              type="text" 
-              placeholder="Symbol" 
-              className="h-10"
-              onChange={(e) => setSymbol(e.target.value)}
-              value={symbol}
-            />
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
+      <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 space-y-6 sm:space-y-8">
+        {/* Header Section */}
+        <div className="space-y-6">
+          {/* Title */}
+          <div className="space-y-1">
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-foreground">Portfolio Management</h1>
+            <p className="text-sm sm:text-base text-muted-foreground">Monitor and execute trades across multiple accounts</p>
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="amount" className="text-sm">Quantity</Label>
-            <Input 
-              id="amount" 
-              type="number" 
-              placeholder="Quantity" 
-              className="h-10"
-              step="0.01"
-              value={quantity}
-              onChange={(e) => setQuantity(parseInt(e.target.value))}
-            />
-          </div>
-        </div>
-
-        {/* Action Buttons */}
-        <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2 sm:gap-3">
-          <Button className="bg-sky-500 text-primary-foreground hover:bg-sky-500/90 text-xs sm:text-sm w-full sm:w-auto" onClick={getAccounts}>
-            <ArrowUpRight className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
-            <span className="hidden sm:inline">Accounts</span>
-            <span className="sm:hidden">Acc</span>
-          </Button>
-          <Button className="bg-success text-success-foreground hover:bg-success/90 text-xs sm:text-sm w-full sm:w-auto" onClick={handleBuyAllPositions}>
-            <ArrowUpRight className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
-            <span className="hidden sm:inline">Buy All</span>
-            <span className="sm:hidden">Buy</span>
-          </Button>
-          <Button variant="destructive" className="text-xs sm:text-sm w-full sm:w-auto" onClick={handleSellAllPositions}>
-            <ArrowDownRight className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
-            <span className="hidden sm:inline">Sell All</span>
-            <span className="sm:hidden">Sell</span>
-          </Button>
-          <Button
-            variant="outline"
-            className="border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground bg-transparent text-xs sm:text-sm w-full sm:w-auto col-span-2 sm:col-span-1"
-            onClick={handleCloseAllPositions}
-          >
-            <X className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
-            <span className="hidden sm:inline">Close All Positions</span>
-            <span className="sm:hidden">Close</span>
-          </Button>
-        </div>
-      </div>
-
-      {/* Stats Cards */}
-      <div className="grid gap-3 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-        <Card className="bg-card border-border">
-          <CardHeader className="pb-3 sm:pb-6">
-            <CardDescription className="text-xs sm:text-sm text-muted-foreground">Total Portfolio Value</CardDescription>
-            <CardTitle className="text-2xl sm:text-3xl font-mono text-foreground">
-              ${totalValue.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-            </CardTitle>
-          </CardHeader>
-        </Card>
-
-        <Card className="bg-card border-border">
-          <CardHeader className="pb-3 sm:pb-6">
-            <CardDescription className="text-xs sm:text-sm text-muted-foreground">Cash Balance</CardDescription>
-            <CardTitle className="text-2xl sm:text-3xl font-mono text-foreground">
-              ${cashBalance.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-            </CardTitle>
-          </CardHeader>
-        </Card>
-
-        <Card className="bg-card border-border">
-          <CardHeader className="pb-3 sm:pb-6">
-            <CardDescription className="text-xs sm:text-sm text-muted-foreground">Total P/L</CardDescription>
-            <CardTitle className={`text-2xl sm:text-3xl font-mono ${totalProfitLoss >= 0 ? "text-success" : "text-destructive"}`}>
-              {totalProfitLoss >= 0 ? "+" : ""}$
-              {totalProfitLoss.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-            </CardTitle>
-          </CardHeader>
-        </Card>
-      </div>
-
-      {/* Open Positions Card */}
-
-      <Card className="bg-card border-border">
-        <CardHeader className="pb-3 sm:pb-6">
-          <CardTitle className="text-lg sm:text-xl text-foreground">Open Positions</CardTitle>
-          <CardDescription className="text-xs sm:text-sm text-muted-foreground">Your current holdings and performance</CardDescription>
-        </CardHeader>
-        <CardContent className="px-3 sm:px-6">
-          <div className="space-y-3 sm:space-y-4">
-            {combinedPositions.map((position, index) => (
-              <div
-                key={index}
-                className="rounded-lg border border-border bg-card p-3 sm:p-6 shadow-sm transition-shadow hover:shadow-md"
-              >
-                <div className="space-y-3 sm:space-y-4">
-                  {/* Account Header */}
-                  <div className="flex items-center justify-between pb-2 sm:pb-3 border-b border-border">
-                    <div className="flex items-center gap-2 sm:gap-3">
-                      <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-primary/10">
-                        <span className="text-xs sm:text-sm font-bold text-primary">{position.account.slice(0, 2).toUpperCase()}</span>
-                      </div>
-                      <div>
-                        <Label className="text-xs text-muted-foreground">Account ID</Label>
-                        <p className="font-mono text-xs sm:text-sm font-semibold text-foreground break-all">{position.account}</p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <Label className="text-xs text-muted-foreground">Positions</Label>
-                      <p className="text-xs sm:text-sm font-semibold text-foreground">{position.positionCount}</p>
-                    </div>
+          
+          {/* Trading Controls Card */}
+          <Card className="border-border/50 shadow-lg bg-card/50 backdrop-blur-sm">
+            <CardContent className="p-4 sm:p-6">
+              <div className="space-y-4">
+                {/* Symbol and Quantity Inputs */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="symbol" className="text-sm font-medium text-foreground">Trading Symbol</Label>
+                    <Input 
+                      id="symbol" 
+                      type="text" 
+                      placeholder="e.g., ES, NQ, AAPL" 
+                      className="h-11 border-border/60 focus:border-primary transition-colors"
+                      onChange={(e) => setSymbol(e.target.value)}
+                      value={symbol}
+                    />
                   </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="amount" className="text-sm font-medium text-foreground">Quantity</Label>
+                    <Input 
+                      id="amount" 
+                      type="number" 
+                      placeholder="Enter quantity" 
+                      className="h-11 border-border/60 focus:border-primary transition-colors"
+                      step="1"
+                      value={quantity || ""}
+                      onChange={(e) => setQuantity(parseInt(e.target.value) || 0)}
+                    />
+                  </div>
+                </div>
 
-                  {/* Positions Grid */}
-                  <div className="space-y-2 sm:space-y-3">
-                    <Label className="text-xs text-muted-foreground">Current Holdings</Label>
-                    <div className="flex flex-wrap gap-1.5 sm:gap-2">
-                      {position.positions.map((pos: any, idx: number) => (
-                        <div
-                          key={idx}
-                          className="flex items-center gap-1.5 sm:gap-2 rounded-md border border-border bg-secondary/30 px-2 sm:px-3 py-1 sm:py-1.5 transition-colors hover:bg-secondary/50"
-                        >
-                          <span className="text-xs font-bold text-primary">{pos.symbol}</span>
-                          <span className="text-xs text-muted-foreground">|</span>
-                          <span className="text-xs font-medium text-foreground">{pos.position}</span>
+                {/* Action Buttons */}
+                <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 pt-2">
+                  <Button 
+                    className="bg-blue-600 hover:bg-blue-700 text-white shadow-md hover:shadow-lg transition-all text-sm font-medium h-11 w-full sm:w-auto sm:min-w-[140px]" 
+                    onClick={getAccounts}
+                  >
+                    <ArrowUpRight className="mr-2 h-4 w-4" />
+                    Refresh Accounts
+                  </Button>
+                  <Button 
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-md hover:shadow-lg transition-all text-sm font-medium h-11 w-full sm:w-auto sm:min-w-[120px]" 
+                    onClick={handleBuyAllPositions}
+                  >
+                    <ArrowUpRight className="mr-2 h-4 w-4" />
+                    Buy All
+                  </Button>
+                  <Button 
+                    className="bg-rose-600 hover:bg-rose-700 text-white shadow-md hover:shadow-lg transition-all text-sm font-medium h-11 w-full sm:w-auto sm:min-w-[120px]"
+                    onClick={handleSellAllPositions}
+                  >
+                    <ArrowDownRight className="mr-2 h-4 w-4" />
+                    Sell All
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="border-2 border-rose-200 text-rose-700 hover:bg-rose-50 hover:border-rose-300 dark:border-rose-800 dark:text-rose-400 dark:hover:bg-rose-950/30 shadow-sm hover:shadow transition-all text-sm font-medium h-11 w-full sm:w-auto sm:flex-1"
+                    onClick={handleCloseAllPositions}
+                  >
+                    <X className="mr-2 h-4 w-4" />
+                    Close All Positions
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Stats Cards */}
+        <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+          <Card className="border-border/50 shadow-lg bg-gradient-to-br from-card to-card/80 backdrop-blur-sm hover:shadow-xl transition-shadow">
+            <CardHeader className="pb-4 sm:pb-6 space-y-2">
+              <CardDescription className="text-xs sm:text-sm font-medium text-muted-foreground uppercase tracking-wide">
+                Total Portfolio Value
+              </CardDescription>
+              <CardTitle className="text-2xl sm:text-3xl lg:text-4xl font-bold font-mono text-foreground">
+                ${totalValue.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </CardTitle>
+            </CardHeader>
+          </Card>
+
+          <Card className="border-border/50 shadow-lg bg-gradient-to-br from-card to-card/80 backdrop-blur-sm hover:shadow-xl transition-shadow">
+            <CardHeader className="pb-4 sm:pb-6 space-y-2">
+              <CardDescription className="text-xs sm:text-sm font-medium text-muted-foreground uppercase tracking-wide">
+                Cash Balance
+              </CardDescription>
+              <CardTitle className="text-2xl sm:text-3xl lg:text-4xl font-bold font-mono text-foreground">
+                ${cashBalance.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </CardTitle>
+            </CardHeader>
+          </Card>
+
+          <Card className={`border-border/50 shadow-lg backdrop-blur-sm hover:shadow-xl transition-shadow ${
+            totalProfitLoss >= 0 
+              ? "bg-gradient-to-br from-emerald-50 to-card dark:from-emerald-950/20 dark:to-card" 
+              : "bg-gradient-to-br from-rose-50 to-card dark:from-rose-950/20 dark:to-card"
+          }`}>
+            <CardHeader className="pb-4 sm:pb-6 space-y-2">
+              <CardDescription className="text-xs sm:text-sm font-medium text-muted-foreground uppercase tracking-wide">
+                Total Profit/Loss
+              </CardDescription>
+              <CardTitle className={`text-2xl sm:text-3xl lg:text-4xl font-bold font-mono ${
+                totalProfitLoss >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"
+              }`}>
+                {totalProfitLoss >= 0 ? "+" : ""}${totalProfitLoss.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </CardTitle>
+            </CardHeader>
+          </Card>
+        </div>
+
+        {/* Open Positions Card */}
+        <Card className="border-border/50 shadow-lg bg-card/50 backdrop-blur-sm">
+          <CardHeader className="border-b border-border/50 bg-muted/30">
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-xl sm:text-2xl font-bold text-foreground">Account Positions</CardTitle>
+                <CardDescription className="text-sm text-muted-foreground mt-1">Manage holdings across all accounts</CardDescription>
+              </div>
+              <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20">
+                <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></div>
+                <span className="text-xs font-medium text-foreground">Live</span>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="p-4 sm:p-6">
+            <div className="space-y-4">
+              {combinedPositions.length === 0 ? (
+                <div className="text-center py-12">
+                  <p className="text-muted-foreground text-sm">No positions found. Click "Refresh Accounts" to load data.</p>
+                </div>
+              ) : (
+                combinedPositions.map((position, index) => (
+                  <div
+                    key={index}
+                    className="rounded-xl border border-border/60 bg-gradient-to-br from-card to-muted/10 p-4 sm:p-6 shadow-md hover:shadow-lg transition-all"
+                  >
+                    <div className="space-y-4">
+                      {/* Account Header */}
+                      <div className="flex items-center justify-between pb-3 border-b border-border/50">
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-xl bg-gradient-to-br from-primary/20 to-primary/10 border border-primary/20 shadow-sm">
+                            <span className="text-sm sm:text-base font-bold text-primary">{position.account.slice(0, 2).toUpperCase()}</span>
+                          </div>
+                          <div>
+                            <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Account</Label>
+                            <p className="font-mono text-sm sm:text-base font-bold text-foreground">{position.account}</p>
+                          </div>
                         </div>
-                      ))}
+                        <div className="flex gap-4 sm:gap-6">
+                          <div className="text-right">
+                            <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Cash Balance</Label>
+                            <p className="text-base sm:text-lg font-bold font-mono text-emerald-600 dark:text-emerald-400">
+                              ${parseFloat(position.TotalCashValue?.value || "0").toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Holdings</Label>
+                            <p className="text-lg sm:text-xl font-bold text-foreground">{position.positionCount}</p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Positions Grid */}
+                      {position.positions.length > 0 && (
+                        <div className="space-y-2">
+                          <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Current Positions</Label>
+                          <div className="flex flex-wrap gap-2">
+                            {position.positions.map((pos: any, idx: number) => (
+                              <div
+                                key={idx}
+                                className="inline-flex items-center gap-2 rounded-lg border border-border/60 bg-gradient-to-r from-secondary/40 to-secondary/20 px-3 py-2 transition-all hover:shadow-md hover:scale-105"
+                              >
+                                <span className="text-sm font-bold text-primary">{pos.symbol}</span>
+                                <div className="h-4 w-px bg-border"></div>
+                                <span className="text-sm font-semibold text-foreground">{pos.position}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Trade Action */}
+                      <div className="space-y-3 pt-2 border-t border-border/30">
+                        <Label className="text-sm font-semibold text-foreground">Execute Trade</Label>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          <Input
+                            id={`symbol-${index}`}
+                            type="text"
+                            placeholder="Symbol"
+                            className="h-11 border-border/60 focus:border-primary transition-colors font-medium"
+                          />
+                          <Input
+                            id={`quantity-${index}`}
+                            type="number"
+                            placeholder="Quantity"
+                            className="h-11 border-border/60 focus:border-primary transition-colors font-medium"
+                          />
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                          <Button 
+                            className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-md hover:shadow-lg transition-all h-11 font-medium" 
+                            onClick={() => handleBuySinglePosition(position.account, index)}
+                          >
+                            <ArrowUpRight className="mr-2 h-4 w-4" />
+                            Buy
+                          </Button>
+                          <Button 
+                            className="bg-rose-600 hover:bg-rose-700 text-white shadow-md hover:shadow-lg transition-all h-11 font-medium"
+                            onClick={() => handleSellSinglePosition(position.account, index)}
+                          >
+                            <ArrowDownRight className="mr-2 h-4 w-4" />
+                            Sell
+                          </Button>
+                        </div>
+                      </div>
                     </div>
                   </div>
+                ))
+              )}
+            </div>
+          </CardContent>
+        </Card>
 
-                  {/* Trade Action */}
-                  <div className="space-y-2 pt-2">
-                    <Label htmlFor={`quantity-${index}`} className="text-xs sm:text-sm font-medium">
-                      Order Quantity
-                    </Label>
-                    <div className="flex flex-col gap-2">
-                      <div className="flex gap-2">
-                        <Input
-                          id={`quantity-${index}`}
-                          type="number"
-                          placeholder="Quantity"
-                          className="flex-1 h-9 sm:h-10 text-sm"
-                        />
-                        <Input
-                          id={`symbol-${index}`}
-                          type="text"
-                          placeholder="Symbol"
-                          className="flex-1 h-9 sm:h-10 text-sm"
-                        />
-                      </div>
-                      <div className="flex gap-2">
-                        <Button size="sm" className="bg-success hover:bg-success/90 flex-1 h-9 text-xs sm:text-sm" onClick={() => handleBuySinglePosition(position.account, index)}>
-                          Buy
-                        </Button>
-                        <Button size="sm" variant="destructive" className="flex-1 h-9 text-xs sm:text-sm" onClick={() => handleSellSinglePosition(position.account, index)}>
-                          Sell
-                        </Button>
-                      </div>
-                    </div>
+        {/* Confirmation Modal */}
+        {confirmationModal.isOpen && (
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
+            <div className="bg-card border border-border/50 rounded-2xl shadow-2xl max-w-md w-full mx-4 overflow-hidden animate-in zoom-in-95 duration-200">
+              {/* Modal Header */}
+              <div className="bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950/20 dark:to-orange-950/20 p-6 border-b border-border/50">
+                <div className="flex items-start gap-4">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 shadow-lg flex-shrink-0">
+                    <AlertTriangle className="h-6 w-6 text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-lg sm:text-xl font-bold text-foreground">{confirmationModal.title}</h3>
+                    <p className="text-sm text-muted-foreground mt-1">Please review before proceeding</p>
                   </div>
                 </div>
               </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Confirmation Modal */}
-      {confirmationModal.isOpen && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-3 sm:p-4">
-          <div className="bg-card border border-border rounded-lg p-4 sm:p-6 max-w-md w-full shadow-lg mx-3">
-            <div className="flex items-start sm:items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
-              <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-destructive/10 flex-shrink-0">
-                <AlertTriangle className="h-4 w-4 sm:h-5 sm:w-5 text-destructive" />
+              
+              {/* Modal Body */}
+              <div className="p-6">
+                <p className="text-sm sm:text-base text-foreground leading-relaxed">
+                  {confirmationModal.message}
+                </p>
               </div>
-              <h3 className="text-base sm:text-lg font-semibold text-foreground">{confirmationModal.title}</h3>
-            </div>
-            <p className="text-sm sm:text-base text-muted-foreground mb-4 sm:mb-6 pl-10 sm:pl-0">{confirmationModal.message}</p>
-            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 sm:justify-end">
-              <Button
-                variant="outline"
-                onClick={hideConfirmationModal}
-                className="border-border text-foreground hover:bg-secondary w-full sm:w-auto order-2 sm:order-1"
-              >
-                {confirmationModal.cancelText}
-              </Button>
-              <Button
-                variant="destructive"
-                onClick={handleConfirm}
-                className="bg-destructive text-destructive-foreground hover:bg-destructive/90 w-full sm:w-auto order-1 sm:order-2"
-              >
-                {confirmationModal.confirmText}
-              </Button>
+              
+              {/* Modal Footer */}
+              <div className="bg-muted/30 px-6 py-4 flex flex-col-reverse sm:flex-row gap-3 sm:justify-end border-t border-border/50">
+                <Button
+                  variant="outline"
+                  onClick={hideConfirmationModal}
+                  className="border-border hover:bg-secondary h-11 font-medium w-full sm:w-auto sm:min-w-[120px] transition-all"
+                >
+                  {confirmationModal.cancelText}
+                </Button>
+                <Button
+                  onClick={handleConfirm}
+                  className="bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-700 hover:to-rose-800 text-white shadow-md hover:shadow-lg h-11 font-medium w-full sm:w-auto sm:min-w-[120px] transition-all"
+                >
+                  {confirmationModal.confirmText}
+                </Button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   )
 }
