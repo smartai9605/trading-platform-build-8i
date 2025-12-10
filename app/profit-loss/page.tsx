@@ -1,9 +1,12 @@
 "use client"
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
 import { TrendingUp, TrendingDown, DollarSign, Percent } from "lucide-react"
 import { Line, LineChart, Bar, BarChart, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Legend } from "recharts"
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
+import { useEffect, useState } from "react"
+import { cn } from "@/lib/utils"
 
 const performanceData = [
   { date: "Jan", profit: 1250, loss: -450, net: 800 },
@@ -29,183 +32,173 @@ const metrics = [
   { label: "Average Win", value: 1850, change: 5.4, icon: TrendingUp },
 ]
 
+const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
+
 export default function ProfitLossPage() {
+
+  const [accounts, setAccounts] = useState<any[]>([])
+  const [openPositions, setOpenPositions] = useState<any[]>([])
+  const [combinedPositions, setCombinedPositions] = useState<any[]>([])
+  const [activeTab, setActiveTab] = useState<"current" | "total">("current")
+
+  useEffect(() => {
+    getAccounts()
+  }, [])
+
+  const getAccounts = async () => {
+    const res = await fetch(`${BACKEND_URL}/historypnl`, {
+    })
+    const response = await res.json()
+    const accounts = response.portfolio
+    const history = response.history
+    
+    if (accounts) {
+      const data = accounts
+      
+      // Group positions by account
+      const positionsByAccount: Record<string, any[]> = {}
+      
+      if (data.positions && Array.isArray(data.positions)) {
+        data.positions.forEach((position: any) => {
+          const accountId = position.account
+          if (!positionsByAccount[accountId]) {
+            positionsByAccount[accountId] = []
+          }
+          positionsByAccount[accountId].push(position)
+        })
+      }
+      
+      // Create detailed account information array
+      const detailedAccounts: any[] = []
+      
+      // Process each account from account_summary
+      if (data.account_summary) {
+        Object.entries(data.account_summary).forEach(([accountId, accountData]: [string, any]) => {
+          const accountPositions = positionsByAccount[accountId] || []
+          const totalMarketValue = accountData.TotalCashValue.value
+          
+          // Find matching history entry for this account
+          const historyEntry = history?.find((h: any) => h["account Number"] === accountId)
+          // Calculate difference: history value (Exit Price) - totalMarketValue
+          const historyValue = historyEntry ? (historyEntry["Exit Price"] || 0) : 0
+          const difference = historyValue - totalMarketValue
+          const detailedAccount = {
+            account: accountId,
+            NetLiquidation: accountData.NetLiquidation,
+            TotalCashValue: accountData.TotalCashValue,
+            positions: accountPositions,
+            totalMarketValue: totalMarketValue,
+            positionCount: accountPositions.length,
+            historyValue: historyValue,
+            difference: difference
+          }
+          
+          detailedAccounts.push(detailedAccount)
+        })
+      }
+      
+      console.log('Detailed accounts:', detailedAccounts)
+      
+      setCombinedPositions(detailedAccounts)
+      setAccounts(detailedAccounts)
+      setOpenPositions(data.positions || [])
+    }
+  }
   const totalPL = metrics[0].value + metrics[1].value
   const totalChange = (totalPL / (totalPL - metrics[0].value * (metrics[0].change / 100)) - 1) * 100
 
   return (
-    <div className="space-y-6 p-6">
-      <div>
-        <h1 className="text-3xl font-bold text-foreground">Profit & Loss</h1>
-        <p className="text-muted-foreground">Track your trading performance and analyze your results</p>
+    <div className="p-6">
+      <div className="mb-6">
+        <h1 className="text-3xl font-bold mb-6">Profit/Loss</h1>
+        
+        {/* Tabs */}
+        <div className="flex gap-2 border-b">
+          <Button
+            variant="ghost"
+            onClick={() => setActiveTab("current")}
+            className={cn(
+              "rounded-none border-b-2 border-transparent -mb-[1px]",
+              activeTab === "current" && "border-primary text-primary"
+            )}
+          >
+            Current
+          </Button>
+          <Button
+            variant="ghost"
+            onClick={() => setActiveTab("total")}
+            className={cn(
+              "rounded-none border-b-2 border-transparent -mb-[1px]",
+              activeTab === "total" && "border-primary text-primary"
+            )}
+          >
+            Total
+          </Button>
+        </div>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-        {metrics.map((metric) => {
-          const Icon = metric.icon
-          const isPositive = metric.change >= 0
-          return (
-            <Card key={metric.label} className="bg-card border-border">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardDescription className="text-sm font-medium text-muted-foreground">{metric.label}</CardDescription>
-                <Icon className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold font-mono text-foreground">
-                  {metric.isPercentage ? `${metric.value}%` : `$${metric.value.toLocaleString()}`}
-                </div>
-                <p className={`text-xs flex items-center gap-1 ${isPositive ? "text-success" : "text-destructive"}`}>
-                  {isPositive ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
-                  {isPositive ? "+" : ""}
-                  {metric.change.toFixed(1)}% from last month
-                </p>
-              </CardContent>
-            </Card>
-          )
-        })}
-      </div>
-
-      <div className="grid gap-6 lg:grid-cols-2">
-        <Card className="bg-card border-border">
-          <CardHeader>
-            <CardTitle className="text-foreground">Performance Over Time</CardTitle>
-            <CardDescription className="text-muted-foreground">Monthly profit and loss breakdown</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ChartContainer
-              config={{
-                profit: {
-                  label: "Profit",
-                  color: "hsl(var(--success))",
-                },
-                loss: {
-                  label: "Loss",
-                  color: "hsl(var(--destructive))",
-                },
-                net: {
-                  label: "Net P/L",
-                  color: "hsl(var(--primary))",
-                },
-              }}
-              className="h-[300px]"
-            >
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={performanceData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                  <XAxis dataKey="date" stroke="hsl(var(--muted-foreground))" />
-                  <YAxis stroke="hsl(var(--muted-foreground))" />
-                  <ChartTooltip content={<ChartTooltipContent />} />
-                  <Legend />
-                  <Line
-                    type="monotone"
-                    dataKey="profit"
-                    stroke="var(--color-profit)"
-                    strokeWidth={2}
-                    name="Profit"
-                    dot={{ fill: "var(--color-profit)" }}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="net"
-                    stroke="var(--color-net)"
-                    strokeWidth={2}
-                    name="Net P/L"
-                    dot={{ fill: "var(--color-net)" }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </ChartContainer>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-card border-border">
-          <CardHeader>
-            <CardTitle className="text-foreground">P/L by Position</CardTitle>
-            <CardDescription className="text-muted-foreground">Realized vs unrealized gains/losses</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ChartContainer
-              config={{
-                realized: {
-                  label: "Realized",
-                  color: "hsl(var(--primary))",
-                },
-                unrealized: {
-                  label: "Unrealized",
-                  color: "hsl(var(--chart-2))",
-                },
-              }}
-              className="h-[300px]"
-            >
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={positionPL}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                  <XAxis dataKey="symbol" stroke="hsl(var(--muted-foreground))" />
-                  <YAxis stroke="hsl(var(--muted-foreground))" />
-                  <ChartTooltip content={<ChartTooltipContent />} />
-                  <Legend />
-                  <Bar dataKey="realized" fill="var(--color-realized)" name="Realized" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="unrealized" fill="var(--color-unrealized)" name="Unrealized" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </ChartContainer>
-          </CardContent>
-        </Card>
-      </div>
-
-      <Card className="bg-card border-border">
-        <CardHeader>
-          <CardTitle className="text-foreground">Detailed Position P/L</CardTitle>
-          <CardDescription className="text-muted-foreground">
-            Breakdown of realized and unrealized gains/losses
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
+      {/* Tab Content */}
+      <div className="mt-6">
+        {activeTab === "current" && (
           <div className="space-y-4">
-            {positionPL.map((position) => (
-              <div
-                key={position.symbol}
-                className="flex items-center justify-between rounded-lg border border-border bg-secondary/50 p-4"
-              >
-                <div className="flex items-center gap-4">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 font-mono font-bold text-primary">
-                    {position.symbol.slice(0, 2)}
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-foreground">{position.symbol}</h3>
-                    <p className="text-sm text-muted-foreground">Position P/L</p>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-3 gap-8 text-right">
-                  <div>
-                    <p className="text-xs text-muted-foreground">Realized</p>
-                    <p
-                      className={`font-mono font-medium ${position.realized >= 0 ? "text-success" : "text-destructive"}`}
-                    >
-                      {position.realized >= 0 ? "+" : ""}${position.realized.toFixed(2)}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground">Unrealized</p>
-                    <p
-                      className={`font-mono font-medium ${position.unrealized >= 0 ? "text-success" : "text-destructive"}`}
-                    >
-                      {position.unrealized >= 0 ? "+" : ""}${position.unrealized.toFixed(2)}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground">Total</p>
-                    <p className={`font-mono font-bold ${position.total >= 0 ? "text-success" : "text-destructive"}`}>
-                      {position.total >= 0 ? "+" : ""}${position.total.toFixed(2)}
-                    </p>
-                  </div>
-                </div>
+            {accounts.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                No accounts found
               </div>
-            ))}
+            ) : (
+              accounts.map((account) => {
+                // Only show accounts that have positions
+                if (!account.positions || account.positions.length === 0) {
+                  return null
+                }
+                
+                return (
+                  <Card key={account.account}>
+                    <CardHeader>
+                      <CardTitle className="text-red-600">{account.account}</CardTitle>
+                      <CardDescription>
+                        Total Cash Value: {account.TotalCashValue?.currency || 'USD'} {parseFloat(account.TotalCashValue?.value || '0').toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        Profit/Loss: {account.difference >= 0 ? '+' : '-'} ${account.difference.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-3">
+                        <h3 className="font-semibold text-sm mb-2">Positions:</h3>
+                        {account.positions.map((position: any, index: number) => (
+                          <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
+                            <div>
+                              <span className="font-medium">{position.symbol || 'N/A'}</span>
+                              {position.secType && (
+                                <span className="text-xs text-muted-foreground ml-2">({position.secType})</span>
+                              )}
+                            </div>
+                            <div className="text-right">
+                              <div className="font-semibold">
+                                Position Size: {position.position || '0'}
+                              </div>
+                              {position.marketValue !== undefined && (
+                                <div className="text-sm text-muted-foreground">
+                                  Market Value: {position.currency || 'USD'} {parseFloat(position.marketValue || '0').toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )
+              })
+            )}
           </div>
-        </CardContent>
-      </Card>
+        )}
+        
+        {activeTab === "total" && (
+          <div>
+            {/* Total Page Content */}
+          </div>
+        )}
+      </div>
     </div>
   )
 }
