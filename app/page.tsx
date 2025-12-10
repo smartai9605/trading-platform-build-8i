@@ -55,11 +55,13 @@ export default function PortfolioPage() {
   }
 
   const getAccounts = async () => {
-    const accounts = await fetch(`${BACKEND_URL}/portfolio`, {
+    const res = await fetch(`${BACKEND_URL}/historypnl`, {
     })
+    const response = await res.json()
+    const accounts = response.portfolio
     console.log("accounts : ", accounts)
-    if (accounts.ok) {
-      const data = await accounts.json()
+    if (accounts) {
+      const data = accounts
       console.log(data)
       
       // Group positions by account
