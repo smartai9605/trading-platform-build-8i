@@ -156,9 +156,13 @@ export default function ProfitLossPage() {
                   <Card key={account.account}>
                     <CardHeader>
                       <CardTitle className="text-red-600">{account.account}</CardTitle>
-                      <CardDescription>
-                        Total Cash Value: {account.TotalCashValue?.currency || 'USD'} {parseFloat(account.TotalCashValue?.value || '0').toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                        Profit/Loss: {account.difference >= 0 ? '+' : '-'} ${account.difference.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      <CardDescription className="flex flex-col sm:flex-row sm:items-center sm:gap-4 gap-2">
+                        <span>
+                          Total Cash Value: {account.TotalCashValue?.currency || 'USD'} {parseFloat(account.TotalCashValue?.value || '0').toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </span>
+                        <span className={account.difference >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"}>
+                          Profit/Loss: {account.difference >= 0 ? '+' : '-'} ${account.difference.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </span>
                       </CardDescription>
                     </CardHeader>
                     <CardContent>

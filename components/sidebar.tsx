@@ -2,10 +2,10 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { LayoutDashboard, Newspaper, TrendingUp, Menu, Bell, LogOut } from "lucide-react"
+import { LayoutDashboard, Newspaper, TrendingUp, Menu, Bell, LogOut, X } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useAuth } from "@/hooks/useAuth"
 
 const navigation = [
@@ -44,12 +44,18 @@ const navigation = [
 export function Sidebar() {
   const pathname = usePathname()
   const [isCollapsed, setIsCollapsed] = useState(false)
+  const [isMobileOpen, setIsMobileOpen] = useState(false)
   const { user, logout } = useAuth()
 
   // Hide sidebar on auth pages
   if (pathname === '/signin' || pathname === '/signup') {
     return null
   }
+
+  // Close mobile sidebar when route changes
+  useEffect(() => {
+    setIsMobileOpen(false)
+  }, [pathname])
 
   // Get user initials
   const getInitials = () => {
@@ -60,22 +66,46 @@ export function Sidebar() {
   }
 
   return (
-    <div
-      className={cn(
-        "flex flex-col border-r border-sidebar-border bg-sidebar transition-all duration-300",
-        isCollapsed ? "w-16" : "w-64",
+    <>
+      {/* Mobile overlay */}
+      {isMobileOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-40 md:hidden"
+          onClick={() => setIsMobileOpen(false)}
+        />
       )}
-    >
+      
+      {/* Sidebar */}
+      <div
+        className={cn(
+          "fixed md:static inset-y-0 left-0 z-50 flex flex-col border-r border-sidebar-border bg-sidebar transition-all duration-300",
+          isCollapsed ? "w-16" : "w-64",
+          // Mobile: hidden by default, shown when isMobileOpen is true
+          isMobileOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
+        )}
+      >
       <div className="flex h-16 items-center justify-between border-b border-sidebar-border px-4">
         {!isCollapsed && <h1 className="font-mono text-xl font-bold text-primary">Freedomtracker</h1>}
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => setIsCollapsed(!isCollapsed)}
-          className="text-sidebar-foreground hover:bg-sidebar-accent"
-        >
-          <Menu className="h-5 w-5" />
-        </Button>
+        <div className="flex items-center gap-2">
+          {/* Mobile close button */}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setIsMobileOpen(false)}
+            className="text-sidebar-foreground hover:bg-sidebar-accent md:hidden"
+          >
+            <X className="h-5 w-5" />
+          </Button>
+          {/* Desktop collapse button */}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setIsCollapsed(!isCollapsed)}
+            className="text-sidebar-foreground hover:bg-sidebar-accent hidden md:flex"
+          >
+            <Menu className="h-5 w-5" />
+          </Button>
+        </div>
       </div>
 
       <nav className="flex-1 space-y-1 p-3">
@@ -128,5 +158,16 @@ export function Sidebar() {
         </div>
       </div>
     </div>
+    
+    {/* Mobile menu button */}
+    <Button
+      variant="ghost"
+      size="icon"
+      onClick={() => setIsMobileOpen(true)}
+      className="fixed top-4 left-4 z-40 md:hidden bg-sidebar border border-sidebar-border shadow-lg"
+    >
+      <Menu className="h-5 w-5" />
+    </Button>
+    </>
   )
 }

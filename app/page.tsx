@@ -307,7 +307,9 @@ export default function PortfolioPage() {
   }, [])
 
   const totalValue = openPositions.reduce((sum, pos) => sum + pos.value, 0)
-  const totalProfitLoss = openPositions.reduce((sum, pos) => sum + pos.profitLoss, 0)
+  const totalProfitLoss = accounts.reduce((sum, acc) => {
+    return sum + (acc.difference || 0)
+  }, 0)
   const cashBalance = accounts.reduce((sum, acc) => {
     const cashValue = parseFloat(acc.TotalCashValue?.value || "0")
     return sum + cashValue
@@ -472,7 +474,7 @@ export default function PortfolioPage() {
                             <p className="font-mono text-sm sm:text-base font-bold text-foreground">{position.account}</p>
                           </div>
                         </div>
-                        <div className="flex gap-4 sm:gap-6">
+                        <div className="flex gap-4 sm:gap-6 sm:flex-row flex-col">
                           <div className="text-right">
                             <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Cash Balance</Label>
                             <p className="text-base sm:text-lg font-bold font-mono text-emerald-600 dark:text-emerald-400">
