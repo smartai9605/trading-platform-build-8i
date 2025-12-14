@@ -59,10 +59,10 @@ export default function PortfolioPage() {
     })
     const response = await res.json()
     const accounts = response.portfolio
-    console.log("accounts : ", accounts)
+    const history = response.history
+    
     if (accounts) {
       const data = accounts
-      console.log(data)
       
       // Group positions by account
       const positionsByAccount: Record<string, any[]> = {}
@@ -77,8 +77,6 @@ export default function PortfolioPage() {
         })
       }
       
-      console.log('Positions grouped by account:', positionsByAccount)
-      
       // Create detailed account information array
       const detailedAccounts: any[] = []
       
@@ -86,14 +84,22 @@ export default function PortfolioPage() {
       if (data.account_summary) {
         Object.entries(data.account_summary).forEach(([accountId, accountData]: [string, any]) => {
           const accountPositions = positionsByAccount[accountId] || []
+          const totalMarketValue = accountData.TotalCashValue.value
           
+          // Find matching history entry for this account
+          const historyEntry = history?.find((h: any) => h["account Number"] === accountId)
+          // Calculate difference: history value (Exit Price) - totalMarketValue
+          const historyValue = historyEntry ? (historyEntry["Exit Price"] || 0) : 0
+          const difference = historyValue - totalMarketValue
           const detailedAccount = {
             account: accountId,
             NetLiquidation: accountData.NetLiquidation,
             TotalCashValue: accountData.TotalCashValue,
             positions: accountPositions,
-            totalMarketValue: accountPositions.reduce((sum, pos) => sum + (pos.marketValue || 0), 0),
-            positionCount: accountPositions.length
+            totalMarketValue: totalMarketValue,
+            positionCount: accountPositions.length,
+            historyValue: historyValue,
+            difference: difference
           }
           
           detailedAccounts.push(detailedAccount)
@@ -110,8 +116,6 @@ export default function PortfolioPage() {
 
   const buyAllPositions = async () => {
     // Collect all accounts with their quantities
-    console.log("symbol : ", symbol)
-    console.log("quantity : ", quantity)
     
     // Extract account IDs
     const accountIds = accounts.map(acc => acc.account)
@@ -134,7 +138,6 @@ export default function PortfolioPage() {
     })
     if (res.ok) {
       const data = await res.json()
-      console.log(data)
       getAccounts()
       toast.success("Buy orders executed successfully across all accounts")
     } else {
@@ -177,7 +180,6 @@ export default function PortfolioPage() {
     })
     if (res.ok) {
       const data = await res.json()
-      console.log(data)
       getAccounts()
       toast.success("Sell order executed successfully")
     } else {
@@ -196,7 +198,6 @@ export default function PortfolioPage() {
   }
 
   const buySinglePosition = async (account: string, index: number) => {
-    console.log("Buy", account)
     const symbol = document.getElementById(`symbol-${index}`) as HTMLInputElement
     const quantity = document.getElementById(`quantity-${index}`) as HTMLInputElement
     const payload = {
@@ -205,8 +206,6 @@ export default function PortfolioPage() {
       "quantity": parseInt(quantity.value),
       "account": account,
     }
-    console.log(JSON.stringify(payload))
-
     const res = await fetch(`${BACKEND_URL}/futuresignal`, {
       method: "POST",
       headers: {
@@ -217,7 +216,6 @@ export default function PortfolioPage() {
 
     if (res.ok) {
       const data = await res.json()
-      console.log(data)
       getAccounts()
       toast.success("Buy order executed successfully")
     } else {
@@ -247,7 +245,6 @@ export default function PortfolioPage() {
     })
     if (res.ok) {
       const data = await res.json()
-      console.log(data)
       getAccounts()
       toast.success("All positions closed successfully")
     } else {
@@ -266,7 +263,6 @@ export default function PortfolioPage() {
   }
 
   const sellSinglePosition = async (account: string, index: number) => {
-    console.log("Sell", account)
     const symbol = document.getElementById(`symbol-${index}`) as HTMLInputElement
     const quantity = document.getElementById(`quantity-${index}`) as HTMLInputElement
     const payload = {
@@ -275,7 +271,6 @@ export default function PortfolioPage() {
       "quantity": parseInt(quantity.value),
       "account": account,
     }
-    console.log(JSON.stringify(payload))
 
     const res = await fetch(`${BACKEND_URL}/futuresignal`, {
       method: "POST",
@@ -287,7 +282,6 @@ export default function PortfolioPage() {
 
     if (res.ok) {
       const data = await res.json()
-      console.log(data)
       getAccounts()
       toast.success("Sell order executed successfully")
     } else {
@@ -484,6 +478,10 @@ export default function PortfolioPage() {
                             <p className="text-base sm:text-lg font-bold font-mono text-emerald-600 dark:text-emerald-400">
                               ${parseFloat(position.TotalCashValue?.value || "0").toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </p>
+                          </div>
+                          <div className="text-right">
+                          <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Profit/Loss</Label>
+                            <p className="text-lg sm:text-xl font-bold text-foreground">{position.difference >= 0 ? '+' : '-'} ${position.difference.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
                           </div>
                           <div className="text-right">
                             <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Holdings</Label>
