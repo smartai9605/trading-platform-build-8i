@@ -86,12 +86,13 @@ export default function ProfitLossPage() {
         Object.entries(data.account_summary).forEach(([accountId, accountData]: [string, any]) => {
           const accountPositions = positionsByAccount[accountId] || []
           const totalMarketValue = accountData.TotalCashValue.value
+          const NetLiquidation = accountData.NetLiquidation.value
           
           // Find matching history entry for this account
           const historyEntry = history?.find((h: any) => h["account Number"] === accountId)
           // Calculate difference: history value (Exit Price) - totalMarketValue
           const historyValue = historyEntry ? (historyEntry["Exit Price"] || 0) : 0
-          const difference =  totalMarketValue - historyValue
+          const difference =  NetLiquidation - historyValue
           const detailedAccount = {
             account: accountId,
             NetLiquidation: accountData.NetLiquidation,

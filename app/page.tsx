@@ -84,7 +84,7 @@ export default function PortfolioPage() {
       if (data.account_summary) {
         Object.entries(data.account_summary).forEach(([accountId, accountData]: [string, any]) => {
           const accountPositions = positionsByAccount[accountId] || []
-          const totalMarketValue = accountData.TotalCashValue.value
+          const totalMarketValue = accountData.NetLiquidation.value
           
           // Find matching history entry for this account
           const historyEntry = history?.find((h: any) => h["account Number"] === accountId)
@@ -311,7 +311,7 @@ export default function PortfolioPage() {
     return sum + (acc.difference || 0)
   }, 0)
   const cashBalance = accounts.reduce((sum, acc) => {
-    const cashValue = parseFloat(acc.TotalCashValue?.value || "0")
+    const cashValue = parseFloat(acc.NetLiquidation?.value || "0")
     return sum + cashValue
   }, 0)
 
@@ -478,7 +478,7 @@ export default function PortfolioPage() {
                           <div className="text-right">
                             <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Cash Balance</Label>
                             <p className="text-base sm:text-lg font-bold font-mono text-emerald-600 dark:text-emerald-400">
-                              ${parseFloat(position.TotalCashValue?.value || "0").toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                              ${parseFloat(position.NetLiquidation?.value || "0").toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </p>
                           </div>
                           <div className="text-right">
