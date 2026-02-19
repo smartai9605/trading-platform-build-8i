@@ -56,7 +56,11 @@ export default function PortfolioPage() {
 
   const getAccounts = async () => {
     const res = await fetch(`${BACKEND_URL}/historypnldaily`, {
-    })
+      method: "GET",
+      headers: {
+        "Accept": "application/json",
+      },
+    });
     const response = await res.json()
     const accounts = response.portfolio
     const history = response.history
